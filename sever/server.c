@@ -10,10 +10,11 @@
 #include <sys/epoll.h>
 #include <errno.h>
 #include "connector.h"
+#include "security.h"
 
 #define MAXEVENTS 64
 
-char defaultDir[50], defaultPort[10];
+char defaultDir[50], defaultPort[10],defaultMaxcon[10];
 
 static int unblockSocket(int sockfd)
 {
@@ -55,24 +56,29 @@ int main (int argc, char *argv[])
 {
     int sockfd, flag;
     int efd, i;
+    pid_t pid;
     struct epoll_event event;
     struct epoll_event *events;
     Connector* connList;
-    
+    SecurityGroup* securitygroup;
+
+
     strcpy(defaultPort, "21");
     strcpy(defaultDir, "/tmp");
+	strcpy(defaultMaxcon,"128");
 
     for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-port")) strcpy(defaultPort, argv[++i]);
         else if (!strcmp(argv[i], "-root")) strcpy(defaultDir, argv[++i]);
+		else if (!strcmp(argv[i], "-maxcon")) strcpy(defaultMaxcon, argv[++i]);
         else {
             printf("wrong arguments![%s]", argv[i]);
             return 1;
         }
     }
+    printf("server on port[%s] at root[%s] with maxconnection [%s]\n", defaultPort, defaultDir,defaultMaxcon);
 
-    printf("server on port[%s] at root[%s]\n", defaultPort, defaultDir);
-
+    securitygroup = loadSecurity("FireWall.txt");
     connList = createConnectorList();
     sockfd = createAndBind(argv[1]);
     if (sockfd == -1)
@@ -80,8 +86,7 @@ int main (int argc, char *argv[])
     flag = unblockSocket(sockfd);
     if (flag == -1)
         abort();
-    flag = listen(sockfd, SOMAXCONN);
-    //SOMAXCONN is the kernel constant, default 128
+    flag = listen(sockfd, c2i(defaultMaxcon));
     if (flag == -1) {
         perror("listen");
         abort();
@@ -91,7 +96,7 @@ int main (int argc, char *argv[])
         perror("epoll_create");
         abort();
     }
-    
+
     event.data.fd = sockfd;
     event.events = EPOLLIN | EPOLLET;
     flag = epoll_ctl(efd, EPOLL_CTL_ADD, sockfd, &event);
@@ -105,14 +110,15 @@ int main (int argc, char *argv[])
     while (1) {
         int n, i;
         n = epoll_wait(efd, events, MAXEVENTS, -1);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n; i++) { //连接正常关闭事件
             if ((events[i].events & EPOLLERR) ||
                 (events[i].events & EPOLLHUP) ||
                 (!(events[i].events & EPOLLIN))) {
                 deleteConnector(connList, events[i].data.fd);
                 continue;
             }
-            else if (sockfd == events[i].data.fd) {
+
+            else if (sockfd == events[i].data.fd) { //有新连接
                 /* New connections */
                 while (1) {
                     struct sockaddr addr;
@@ -136,8 +142,17 @@ int main (int argc, char *argv[])
                                        sbuf, sizeof sbuf,
                                        NI_NUMERICHOST | NI_NUMERICSERV);
                     if (flag == 0) {
-                        printf("Accepted connection on descriptor %d "
-                               "(host=%s, port=%s)\n", connfd, hbuf, sbuf);
+                        if(securitycheck(securitygroup,hbuf)){
+                            printf("Accepted connection on descriptor %d "
+                                   "(host=%s, port=%s)\n", connfd, hbuf, sbuf);
+                        }
+                        else{
+                            printf("Accepted connection on descriptor %d "
+                                   "(host=%s, port=%s) is not secure and has been aborted!\n", connfd, hbuf, sbuf);
+                            break;
+                        }
+
+
                     }
                     flag = unblockSocket(connfd);
                     if (flag == -1)
