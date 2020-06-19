@@ -12,6 +12,7 @@
 #include "connector.h"
 #include "security.h"
 
+#define REDIRECT
 #define MAXEVENTS 64
 
 char defaultDir[50], defaultPort[10],defaultMaxcon[10];
@@ -62,6 +63,10 @@ int main (int argc, char *argv[])
     Connector* connList;
     SecurityGroup* securitygroup;
 
+    #ifdef REDIRECT
+    FILE *log;
+    if((log=freopen("sever_log.txt","w+",stdout))==NULL) exit(-1);
+    #endif
 
     strcpy(defaultPort, "21");
     strcpy(defaultDir, "/tmp");
@@ -77,6 +82,7 @@ int main (int argc, char *argv[])
         }
     }
     printf("server on port[%s] at root[%s] with maxconnection [%s]\n", defaultPort, defaultDir,defaultMaxcon);
+
 
     securitygroup = loadSecurity("FireWall.txt");
     connList = createConnectorList();
@@ -108,6 +114,10 @@ int main (int argc, char *argv[])
     events = calloc(MAXEVENTS, sizeof event);
 
     while (1) {
+        #ifdef REDIRECT
+        fclose(stdout);
+        if((log=freopen("sever_log.txt","a+",stdout))==NULL) exit(-1);
+        #endif
         int n, i;
         n = epoll_wait(efd, events, MAXEVENTS, -1);
         for (i = 0; i < n; i++) { //连接正常关闭事件
