@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
 
     #ifdef REDIRECT
     FILE *log;
-    if((log=freopen("sever_log.txt","w+",stdout))==NULL) exit(-1);
+    if((log=freopen("server_log.txt","w+",stdout))==NULL) exit(-1);
     #endif
 
     strcpy(defaultPort, "21");
@@ -115,8 +115,7 @@ int main (int argc, char *argv[])
 
     while (1) {
         #ifdef REDIRECT
-        fclose(stdout);
-        if((log=freopen("sever_log.txt","a+",stdout))==NULL) exit(-1);
+        fflush(stdout);
         #endif
         int n, i;
         n = epoll_wait(efd, events, MAXEVENTS, -1);
