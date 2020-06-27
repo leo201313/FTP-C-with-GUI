@@ -12,7 +12,7 @@
 #include "connector.h"
 #include "security.h"
 
-//#define REDIRECT
+#define REDIRECT
 #define MAXEVENTS 64
 
 char defaultDir[50], defaultPort[10],defaultMaxcon[10];
