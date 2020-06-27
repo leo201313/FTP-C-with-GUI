@@ -174,7 +174,6 @@ void replyServer(Status* status, char* msg) {
                 }
             }
             while (1) {
-                printf("1\n");
                 len = read(connfd, buff, sizeof buff);
                 if (len == -1) {
                     printf("read error\n");
@@ -194,6 +193,7 @@ void replyServer(Status* status, char* msg) {
         }
         if (status->status == 12) { // RETR
             int connfd;
+            status->status = 16;
             if (status->pasv == 1) {
                 connfd = status->filefd;
             }
@@ -212,6 +212,8 @@ void replyServer(Status* status, char* msg) {
                 printf("open error\n");
                 return;
             }
+
+
             while (1) {
                 len = read(connfd, buff, sizeof buff);
                 if (len == -1) {
@@ -225,8 +227,9 @@ void replyServer(Status* status, char* msg) {
             }
             close(connfd);
             status->pasv = -1;
+            status->filefd = -1;
             fclose(f);
-            status->status = 16;
+            //printf("OKK");
         }
         if (status->status == 11) { // STOR
             int connfd;
@@ -264,6 +267,7 @@ void replyServer(Status* status, char* msg) {
             }
             close(connfd);
             status->pasv = -1;
+            status->filefd = -1;
             fclose(f);
             status->status = 16;
         }
@@ -402,8 +406,8 @@ int main(int argc, char **argv) {
     status->gui = 0;
     status->pasv = -1;
 
-    strcpy(CUSER, "USER anonymous\r\n");
-    strcpy(CPASS, "PASS abc@mail.com\r\n");
+    strcpy(CUSER, "USER pioneer\r\n");
+    strcpy(CPASS, "PASS pioneer_password\r\n");
 
     for (i = 0; i < argc; i++) {
         if (!strcmp(argv[i], "-user")) sprintf(CUSER, "USER %s\r\n", argv[++i]);

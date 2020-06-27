@@ -185,8 +185,8 @@ class GUI:
             window.destroy()
             return
         def populateNode(path, parent):
-            self.getCmdResponse('CWD '+path)
             self.getCmdResponse('PASV')
+            self.getCmdResponse('CWD '+path)
             initFiles = self.getCmdResponse('LIST')
             if len(initFiles) == 0:
                 tree.insert(parent, END, text='empty folder')
@@ -248,6 +248,7 @@ class GUI:
                 dirpath = askdirectory()
                 if not dirpath == '':
                     os.rename(tree.set(tree.focus(), 'path').split('/')[-1], dirpath+'/'+tree.set(tree.focus(), 'path').split('/')[-1])
+            ##refresh()
             return
         def remove():
             if not tree.focus():
@@ -298,6 +299,8 @@ class GUI:
         def refresh():
             dfsDelete(parent)
             populateNode('/', parent)
+            
+
         tree.bind('<<TreeviewOpen>>', updateTree)
         populateNode('/', parent)
         Button(window, text="refresh", command=refresh).grid(column=0, row=3)

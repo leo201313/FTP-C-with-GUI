@@ -329,7 +329,6 @@ void STOR(Connector* connector, char* msg) {
     }
     fclose(fin);
     close(connfd);
-    close(connector->filefd);
     if (connector->mode == 1) close(connector->filefd);
     connector->mode = 0;
     connector->filefd = -1;
@@ -337,6 +336,8 @@ void STOR(Connector* connector, char* msg) {
         printf("write wrong\n");
         return;
     }
+
+
 }
 
 void RETR(Connector* connector, char* msg) {

@@ -12,7 +12,7 @@
 #include "connector.h"
 #include "security.h"
 
-#define REDIRECT
+//#define REDIRECT
 #define MAXEVENTS 64
 
 char defaultDir[50], defaultPort[10],defaultMaxcon[10];
@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
     #endif
 
     strcpy(defaultPort, "21");
-    strcpy(defaultDir, "/tmp");
+    strcpy(defaultDir, "/home");
 	strcpy(defaultMaxcon,"128");
 
     for (i = 1; i < argc; i++) {
